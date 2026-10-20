@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bingo da Reunião</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1EF; --surface:#FFFFFF; --ink:#16233F; --muted:#586377; --line:#D2D8D5;
+  --note:#FFE45C; --note-ink:#2A2410; --marker:#E0352B; --ok:#1C8C55; --ok-bg:#DDF3E6; --blue:#2448C7;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --hand:"Permanent Marker", "Comic Sans MS", "Marker Felt", cursive;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#151A1E; --surface:#1F262B; --ink:#E9EEF2; --muted:#9AA6B2; --line:#333C43;
+    --note:#F2D545; --note-ink:#231D05; --marker:#FF5A4E; --ok:#3CC17F; --ok-bg:#16352A; --blue:#8AA2FF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151A1E; --surface:#1F262B; --ink:#E9EEF2; --muted:#9AA6B2; --line:#333C43;
+  --note:#F2D545; --note-ink:#231D05; --marker:#FF5A4E; --ok:#3CC17F; --ok-bg:#16352A; --blue:#8AA2FF;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--display);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.view{display:none;max-width:1180px;margin:0 auto;padding:20px 16px 40px}
+.view.on{display:block}
+
+/* Home */
+.home{min-height:100%;display:none;align-items:center;align-content:center;gap:36px;max-width:1040px}
+.home.on{display:grid}
+@media (min-width:820px){.home.on{grid-template-columns:1.25fr 1fr;min-height:100svh}}
+.home-text{display:flex;flex-direction:column;align-items:flex-start}
+.qr-card{background:#fff;color:#16233F;border-radius:20px;padding:18px 18px 20px;text-align:center;max-width:340px;width:100%;justify-self:center;transform:rotate(1.5deg);box-shadow:0 18px 30px -18px rgba(0,0,0,.45)}
+.qr-card #qr{aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.qr-card #qr svg{display:block;width:100%;height:auto}
+.qr-card strong{display:block;font-size:20px;margin:10px 0 2px}
+.qr-card small{font-size:13px;color:#586377;overflow-wrap:anywhere}
+.home h1{font-size:clamp(44px,13vw,84px);line-height:.92;font-weight:800;letter-spacing:-.03em;margin:0 0 18px}
+.home h1 span{display:block;font-family:var(--hand);font-weight:400;color:var(--marker);font-size:.62em;letter-spacing:0;transform:rotate(-3deg);transform-origin:left;margin-top:8px}
+.home p{color:var(--muted);margin:0 0 32px;max-width:44ch}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:16px 22px;font-weight:600;font-size:17px;background:var(--ink);color:var(--bg)}
+.btn.note{background:var(--note);color:var(--note-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn.small{padding:10px 14px;font-size:15px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.linkish{background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;padding:12px 0;margin-top:14px;align-self:flex-start}
+
+/* Player */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.bar h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em}
+.code{font-family:var(--hand);font-size:22px;background:var(--note);color:var(--note-ink);padding:4px 12px;border-radius:4px;transform:rotate(2deg);white-space:nowrap}
+.name-form{max-width:420px}
+.name-form label{display:block;font-weight:600;margin-bottom:8px}
+.name-form input,.validate input{width:100%;padding:14px 16px;border:2px solid var(--line);border-radius:12px;background:var(--surface);font-size:18px}
+.name-form .btn{margin-top:14px;width:100%}
+.hint{color:var(--muted);font-size:15px;margin:10px 0 0}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:560px;margin:0 auto}
+.cell{position:relative;min-height:88px;padding:8px 6px;border:2px solid var(--line);border-radius:10px;background:var(--surface);
+  font-size:clamp(11.5px,3.2vw,15px);line-height:1.2;font-weight:600;hyphens:auto;overflow-wrap:anywhere;display:flex;align-items:center;justify-content:center;text-align:center}
+.cell svg{position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);pointer-events:none;overflow:visible}
+.cell svg path{fill:none;stroke:var(--marker);stroke-width:4;stroke-linecap:round;stroke-dasharray:400;stroke-dashoffset:400;opacity:.9}
+.cell[aria-pressed="true"]{border-color:transparent}
+.cell[aria-pressed="true"] svg path{stroke-dashoffset:0;transition:stroke-dashoffset .35s ease-out}
+.status{display:flex;justify-content:space-between;align-items:center;max-width:560px;margin:14px auto 0;color:var(--muted);font-size:15px}
+.bingo-cta{max-width:560px;margin:16px auto 0;display:none}
+.bingo-cta.on{display:block}
+.bingo-cta .btn{width:100%;font-size:22px;padding:18px;font-family:var(--hand);font-weight:400;background:var(--marker);color:#fff}
+.overlay{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);display:none;align-items:center;justify-content:center;padding:24px;text-align:center}
+.overlay.on{display:flex}
+.overlay .big{font-family:var(--hand);font-size:clamp(64px,20vw,140px);color:var(--marker);line-height:1;transform:rotate(-4deg);margin:0 0 16px}
+.overlay p{margin:0 0 10px;font-size:18px}
+.overlay .code{font-size:44px;display:inline-block;margin:6px 0 24px}
+
+/* Moderator */
+.mod{display:grid;gap:20px}
+@media (min-width:900px){.mod{grid-template-columns:1.5fr 1fr;align-items:start}}
+.stage{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:clamp(18px,3vw,36px);display:flex;flex-direction:column;gap:20px}
+.stage-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;color:var(--muted)}
+.count{font-weight:800;color:var(--ink);font-size:20px}
+.postit{background:var(--note);color:var(--note-ink);min-height:clamp(200px,32vw,360px);padding:clamp(22px,4vw,48px);border-radius:4px;transform:rotate(-1.2deg);
+  box-shadow:0 18px 28px -18px rgba(40,30,0,.45);display:flex;align-items:center;justify-content:center;text-align:center}
+.postit q{font-family:var(--hand);font-size:clamp(28px,4.6vw,62px);line-height:1.15;quotes:"“" "”"}
+.postit.empty q{font-family:var(--display);font-size:clamp(18px,2.2vw,24px);font-weight:600;quotes:none;opacity:.75}
+.postit.rolling q{opacity:.55}
+.stage-actions{display:flex;gap:10px;flex-wrap:wrap}
+.stage-actions .btn.note{flex:1;min-width:200px;font-size:20px}
+.panel{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:18px}
+.panel h3{margin:0 0 12px;font-size:18px}
+.side{display:grid;gap:20px}
+.join{display:flex;gap:18px;align-items:center}
+.join-qr{flex:0 0 clamp(140px,14vw,200px);background:#fff;border-radius:12px;padding:4px}
+.join-qr svg{display:block;width:100%;height:auto}
+.join h3{font-size:22px;margin-bottom:6px}
+.join-code{font-size:clamp(34px,3.6vw,48px);display:inline-block;letter-spacing:.08em}
+.history{list-style:none;margin:0;padding:0;max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.history li{display:flex;gap:10px;font-size:15px;padding:6px 0;border-bottom:1px solid var(--line)}
+.history li b{color:var(--muted);min-width:2.2em;font-variant-numeric:tabular-nums}
+.history li:first-child{font-weight:800}
+.validate .row{display:flex;gap:8px}
+.validate input{text-transform:uppercase;letter-spacing:.15em;font-family:var(--hand)}
+#gameInput{text-transform:uppercase;letter-spacing:.12em}
+#gameInput::placeholder,.validate input::placeholder{text-transform:none;letter-spacing:0}
+.name-form label + input{margin-bottom:4px}
+.verdict{margin:14px 0 10px;font-weight:600}
+.verdict.ok{color:var(--ok)} .verdict.no{color:var(--marker)}
+.vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.vgrid div{font-size:11.5px;line-height:1.2;padding:6px 4px;border-radius:6px;border:1.5px dashed var(--line);color:var(--muted);text-align:center;min-height:56px;display:flex;align-items:center;justify-content:center;hyphens:auto;overflow-wrap:anywhere}
+.vgrid div.hit{border:1.5px solid var(--ok);background:var(--ok-bg);color:var(--ink);font-weight:600}
+.danger-zone{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.back{background:none;border:0;color:var(--muted);padding:8px 0;font-size:15px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- Home -->
+<main id="home" class="view home on">
+  <div class="home-text">
+  <h1>Bingo da Reunião <span>você está no mudo</span></h1>
+  <p>Pegue sua cartela, marque as frases conforme o moderador sorteia e grite bingo quando completar todas as 16.</p>
+  <button class="btn note" id="goPlay">Pegar minha cartela</button>
+  <button class="linkish" id="goMod">Sou o moderador</button>
+  </div>
+  <aside class="qr-card" aria-label="QR code para abrir o bingo no celular">
+    <div id="qr" role="img" aria-label="QR code com o link do Bingo da Reunião"></div>
+    <strong>Aponte a câmera do celular</strong>
+    <small id="qrLink"></small>
+  </aside>
+</main>
+
+<!-- Player -->
+<main id="player" class="view">
+  <div id="nameStep" class="name-form">
+    <button class="back" data-home>← Voltar</button>
+    <h2 style="font-size:28px;margin:8px 0 20px">Como você se chama?</h2>
+    <label for="nameInput">Seu nome</label>
+    <input id="nameInput" autocomplete="given-name" maxlength="30" placeholder="Ex.: Carla">
+    <label for="gameInput" style="margin-top:18px">Código do jogo</label>
+    <input id="gameInput" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="Está na tela do moderador">
+    <p class="hint" id="formError" hidden style="color:var(--marker)"></p>
+    <button class="btn" id="makeCard">Gerar minha cartela</button>
+    <p class="hint">Cada pessoa recebe uma combinação diferente de frases.</p>
+  </div>
+
+  <div id="cardStep" hidden>
+    <div class="bar">
+      <h2 id="hello">Cartela</h2>
+      <span class="code" id="myCode" title="Código da sua cartela">----</span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="status">
+      <span id="markCount">0 de 16 marcadas</span>
+      <button class="btn ghost small" id="newCard">Trocar cartela</button>
+    </div>
+    <div class="bingo-cta" id="bingoCta"><button class="btn" id="bingoBtn">BINGO!</button></div>
+    <p class="hint" style="max-width:560px;margin:16px auto 0">Toque numa frase quando o moderador sortear. Toque de novo para desmarcar.</p>
+  </div>
+</main>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+  <div>
+    <p class="big" id="ovTitle">Bingo!</p>
+    <p>Fale alto para o moderador e passe o código da sua cartela:</p>
+    <span class="code" id="ovCode">----</span><br>
+    <button class="btn ghost" id="closeOv">Voltar para a cartela</button>
+  </div>
+</div>
+
+<!-- Moderator -->
+<main id="mod" class="view">
+  <button class="back" data-home>← Voltar</button>
+  <div class="mod">
+    <section class="stage">
+      <div class="stage-top">
+        <span>Frase sorteada</span>
+        <span><span class="count" id="drawCount">0</span> de 50</span>
+      </div>
+      <div class="postit empty" id="postit" aria-live="polite"><q id="current">Clique em sortear para começar</q></div>
+      <div class="stage-actions">
+        <button class="btn note" id="drawBtn">Sortear frase</button>
+        <button class="btn ghost" id="undoBtn">Desfazer última</button>
+      </div>
+      <p class="hint" style="margin:0">Atalho: barra de espaço sorteia.</p>
+    </section>
+
+    <div class="side">
+      <section class="panel join">
+        <div class="join-qr" id="qrMod" role="img" aria-label="QR code com o link do Bingo da Reunião"></div>
+        <div>
+          <h3>Entre no jogo</h3>
+          <p class="hint" style="margin:0 0 10px">Escaneie com o celular e use o código do jogo:</p>
+          <span class="code join-code" id="gameCode">----</span>
+        </div>
+      </section>
+      <section class="panel validate">
+        <h3>Conferir um bingo</h3>
+        <div class="row">
+          <input id="checkInput" maxlength="4" placeholder="Código" aria-label="Código da cartela">
+          <button class="btn small" id="checkBtn">Conferir</button>
+        </div>
+        <p class="verdict" id="verdict" hidden></p>
+        <div class="vgrid" id="vgrid"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Já sorteadas</h3>
+        <ol class="history" id="history"></ol>
+        <p class="hint" id="historyEmpty">Nenhuma frase ainda.</p>
+      </section>
+
+      <div class="danger-zone">
+        <button class="btn ghost small" id="resetBtn">Zerar sorteio</button>
+        <button class="btn ghost small" id="newGameBtn">Novo jogo</button>
+      </div>
+      <p class="hint" style="margin:0">Zerar recomeça o mesmo jogo e mantém as cartelas. Novo jogo gera outro código e invalida as cartelas já criadas.</p>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+const PHRASES = [
+"Você está no mudo.","Vocês estão vendo minha tela?","Estão me ouvindo?","Minha internet está meio ruim.","Vamos fazer um follow-up.",
+"Depois podemos falar offline.","Quem pode assumir essa ação?","Acho que estamos saindo do escopo.","Vamos colocar no backlog.","Você já tem o business case?",
+"Já abriu um chamado?","Vamos esperar mais dois minutinhos.","Isso é prioridade?","Qual é o plano B?","Vamos colocar isso no appendix.",
+"Está no SharePoint.","Para mim o link não abre.","É só um botão.","Vamos pensar fora da caixa.","Isso é um quick win.",
+"Precisamos ser mais ágeis.","Vamos deixar isso para a fase 2.","Última pergunta...","Tenta sair e entrar de novo.","Vamos envolver o time global.",
+"Vamos colocar como TBD.","Me corrijam se eu estiver errado.","Algum comentário antes de seguirmos?","Acho que precisamos dar um passo atrás.","Vamos olhar o todo.",
+"Isso não estava previsto.","O \u201cchefe do chefe\u201d que pediu.","Não temos recursos disponíveis.","Está em andamento.","Teoricamente, sim.",
+"Você limpou o cache?","Consegue mandar um print?","Tem algum workaround?","Isso não é problema de TI.","Melhor não escalar ainda.",
+"Alguém sabe se ele vem pra reunião?","Desculpa, estava falando no mudo.","Tenho um hard stop.","BRB.","Preciso pular para outra reunião.",
+"Isso é must-have?","Conforme meu último e-mail...","Posso fazer uma pergunta talvez óbvia?","Só fazendo o advogado do diabo...","Desculpa, estava respondendo uma mensagem."
+];
+const SIZE = 16;
+const ALPH = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const KEY = "bingo-reuniao-v2:";
+
+const store = {
+  get(k){ try{ const v = localStorage.getItem(KEY+k); return v ? JSON.parse(v) : null; }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(KEY+k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(KEY+k); }catch(e){} }
+};
+
+// Cartela determinística a partir do código: o moderador recria a mesma cartela para conferir.
+function hash(str){ let h = 2166136261; for(const c of str){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function shuffle(arr, r){ const a = arr.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+// A ordem do sorteio é fixa para cada código de jogo.
+function drawOrder(game){ return shuffle(PHRASES.map((_, i) => i), rng(hash("kc-ordem:" + game))); }
+// Cada cartela fica completa numa posição entre a 37ª e a 50ª frase sorteada.
+// Os pesos fazem o primeiro bingo cair entre a 37ª e a 40ª com 20 a 30 jogadores.
+const FINISH_WEIGHTS = [[37,0.3],[38,0.8],[39,2],[40,5]].concat(Array.from({length:10}, (_, i) => [41 + i, 2.43]));
+function cardFor(game, code){
+  const order = drawOrder(game);
+  const r = rng(hash("kc-cartela:" + game + ":" + code));
+  const total = FINISH_WEIGHTS.reduce((s, w) => s + w[1], 0);
+  let x = r() * total, k = 50;
+  for(const [pos, w] of FINISH_WEIGHTS){ x -= w; if(x < 0){ k = pos; break; } }
+  const before = shuffle(order.slice(0, k - 1), r).slice(0, SIZE - 1);
+  return shuffle([...before, order[k - 1]], r);
+}
+function validCode(c){ return c.length === 4 && [...c].every(ch => ALPH.includes(ch)); }
+function newCode(){
+  const b = new Uint32Array(4);
+  (window.crypto && crypto.getRandomValues) ? crypto.getRandomValues(b) : b.forEach((_, i) => b[i] = Math.random() * 1e9);
+  return Array.from(b, n => ALPH[n % ALPH.length]).join("");
+}
+const $ = id => document.getElementById(id);
+
+// QR code: aponta para o endereço onde esta página está publicada (ex.: Render).
+const SHARE_URL = location.origin + location.pathname.replace(/index\.html$/, "");
+$("qrLink").textContent = SHARE_URL.replace("https://", "");
+try{
+  const q = qrcode(0, "M"); q.addData(SHARE_URL); q.make();
+  const svg = q.createSvgTag({ cellSize: 4, margin: 16, scalable: true });
+  $("qr").innerHTML = svg; $("qrMod").innerHTML = svg;
+}catch(e){
+  $("qr").textContent = "Não foi possível gerar o QR code. Use o link abaixo.";
+  $("qrMod").textContent = SHARE_URL;
+}
+
+function show(id){ document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === id)); window.scrollTo(0, 0); }
+document.querySelectorAll("[data-home]").forEach(b => b.onclick = () => show("home"));
+$("goPlay").onclick = () => { show("player"); renderPlayer(); };
+$("goMod").onclick = () => { show("mod"); renderMod(); };
+
+// ---------- Jogador ----------
+let me = store.get("player");
+const circle = '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M50 4 C82 3 97 22 96 50 C95 80 76 97 48 96 C20 95 3 78 4 49 C5 22 22 6 56 6"/></svg>';
+
+function renderPlayer(){
+  if(!me){ $("nameStep").hidden = false; $("cardStep").hidden = true; setTimeout(() => $("nameInput").focus(), 50); return; }
+  $("nameStep").hidden = true; $("cardStep").hidden = false;
+  $("hello").textContent = "Cartela de " + me.name;
+  $("myCode").textContent = me.code;
+  const grid = $("grid"); grid.innerHTML = "";
+  cardFor(me.game, me.code).forEach((p, pos) => {
+    const b = document.createElement("button");
+    b.className = "cell"; b.type = "button";
+    b.setAttribute("aria-pressed", me.marked.includes(pos) ? "true" : "false");
+    b.innerHTML = circle;
+    const s = document.createElement("span"); s.textContent = PHRASES[p]; b.appendChild(s);
+    b.onclick = () => {
+      const on = me.marked.includes(pos);
+      me.marked = on ? me.marked.filter(x => x !== pos) : [...me.marked, pos];
+      b.setAttribute("aria-pressed", on ? "false" : "true");
+      store.set("player", me); updateStatus();
+    };
+    grid.appendChild(b);
+  });
+  updateStatus();
+}
+function updateStatus(){
+  const n = me.marked.length;
+  $("markCount").textContent = n + " de " + SIZE + " marcadas";
+  $("bingoCta").classList.toggle("on", n === SIZE);
+}
+$("makeCard").onclick = () => {
+  const name = $("nameInput").value.trim();
+  const game = $("gameInput").value.trim().toUpperCase();
+  const err = $("formError");
+  if(!name){ err.hidden = false; err.textContent = "Digite seu nome para continuar."; $("nameInput").focus(); return; }
+  if(!validCode(game)){ err.hidden = false; err.textContent = "Digite o código do jogo com 4 caracteres, como aparece na tela do moderador."; $("gameInput").focus(); return; }
+  err.hidden = true;
+  me = { name, game, code: newCode(), marked: [] }; store.set("player", me); renderPlayer();
+};
+["nameInput", "gameInput"].forEach(id => $(id).addEventListener("keydown", e => { if(e.key === "Enter") $("makeCard").click(); }));
+armTwoTap($("newCard"), "Trocar cartela", "Toque de novo para trocar", () => { $("nameInput").value = me.name; me = null; store.del("player"); renderPlayer(); });
+$("bingoBtn").onclick = () => { $("ovCode").textContent = me.code; $("overlay").classList.add("on"); $("closeOv").focus(); };
+$("closeOv").onclick = () => $("overlay").classList.remove("on");
+
+// ---------- Moderador ----------
+let mod = store.get("mod");
+if(!mod || !validCode(mod.game)){ mod = { game: newCode(), count: 0 }; store.set("mod", mod); }
+let order = drawOrder(mod.game);
+let drawn = order.slice(0, mod.count);
+function saveMod(){ mod.count = drawn.length; store.set("mod", mod); }
+let rolling = false;
+
+function renderMod(){
+  $("gameCode").textContent = mod.game;
+  $("drawCount").textContent = drawn.length;
+  const last = drawn[drawn.length - 1];
+  const post = $("postit");
+  if(last === undefined){ post.classList.add("empty"); $("current").textContent = "Clique em sortear para começar"; }
+  else { post.classList.remove("empty"); $("current").textContent = PHRASES[last]; }
+  $("drawBtn").disabled = drawn.length >= PHRASES.length;
+  if(drawn.length >= PHRASES.length) $("drawBtn").textContent = "Todas as frases saíram";
+  else $("drawBtn").textContent = "Sortear frase";
+  $("undoBtn").disabled = drawn.length === 0;
+  const h = $("history"); h.innerHTML = "";
+  drawn.slice().reverse().forEach((p, i) => {
+    const li = document.createElement("li");
+    const b = document.createElement("b"); b.textContent = (drawn.length - i) + ".";
+    const s = document.createElement("span"); s.textContent = PHRASES[p];
+    li.append(b, s); h.appendChild(li);
+  });
+  $("historyEmpty").hidden = drawn.length > 0;
+  if($("checkInput").value.trim().length === 4) check();
+}
+function draw(){
+  if(rolling) return;
+  const left = PHRASES.map((_, i) => i).filter(i => !drawn.includes(i));
+  if(!left.length) return;
+  const pick = order[drawn.length];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const finish = () => { drawn.push(pick); saveMod(); rolling = false; $("postit").classList.remove("rolling"); renderMod(); };
+  if(reduce || left.length === 1){ finish(); return; }
+  rolling = true; $("drawBtn").disabled = true;
+  const post = $("postit"); post.classList.remove("empty"); post.classList.add("rolling");
+  let t = 0;
+  const iv = setInterval(() => {
+    $("current").textContent = PHRASES[left[Math.floor(Math.random() * left.length)]];
+    if((t += 80) >= 1100){ clearInterval(iv); finish(); }
+  }, 80);
+}
+$("drawBtn").onclick = draw;
+document.addEventListener("keydown", e => {
+  if(e.code === "Space" && $("mod").classList.contains("on") && document.activeElement.tagName !== "INPUT"){ e.preventDefault(); draw(); }
+});
+$("undoBtn").onclick = () => { if(rolling) return; drawn.pop(); saveMod(); renderMod(); };
+function clearCheck(){ $("checkInput").value = ""; $("verdict").hidden = true; $("vgrid").innerHTML = ""; }
+armTwoTap($("resetBtn"), "Zerar sorteio", "Toque de novo para zerar", () => { drawn = []; saveMod(); clearCheck(); renderMod(); });
+armTwoTap($("newGameBtn"), "Novo jogo", "Toque de novo: invalida as cartelas", () => { mod = { game: newCode(), count: 0 }; order = drawOrder(mod.game); drawn = []; saveMod(); clearCheck(); renderMod(); });
+
+function check(){
+  const code = $("checkInput").value.trim().toUpperCase();
+  const v = $("verdict"); const vg = $("vgrid");
+  v.hidden = false; vg.innerHTML = "";
+  if(!validCode(code)){
+    v.className = "verdict no"; v.textContent = "Código inválido. São 4 caracteres, como aparece na etiqueta amarela da cartela."; return;
+  }
+  const card = cardFor(mod.game, code);
+  const missing = card.filter(p => !drawn.includes(p));
+  card.forEach(p => { const d = document.createElement("div"); d.textContent = PHRASES[p]; if(drawn.includes(p)) d.className = "hit"; vg.appendChild(d); });
+  if(!missing.length){ v.className = "verdict ok"; v.textContent = "Bingo confirmado! As 16 frases da cartela " + code + " já saíram."; }
+  else { v.className = "verdict no"; v.textContent = "Ainda não. Faltam " + missing.length + (missing.length === 1 ? " frase" : " frases") + " (as tracejadas)."; }
+}
+$("checkBtn").onclick = check;
+$("checkInput").addEventListener("keydown", e => { if(e.key === "Enter") check(); });
+
+function armTwoTap(btn, label, confirmLabel, action){
+  let armed = null;
+  btn.onclick = () => {
+    if(armed){ clearTimeout(armed); armed = null; btn.textContent = label; action(); return; }
+    btn.textContent = confirmLabel;
+    armed = setTimeout(() => { armed = null; btn.textContent = label; }, 3000);
+  };
+}
+</script>
+</body>
+</html>
