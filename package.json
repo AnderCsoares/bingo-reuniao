@@ -1,0 +1,13 @@
+{
+  "name": "bingo-reuniao",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Bingo da Reunião com moderador protegido por senha e lista de participantes",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
