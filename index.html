@@ -141,6 +141,7 @@ button{cursor:pointer}
 .setup input{width:140px;padding:14px 16px;border:2px solid var(--line);border-radius:12px;background:var(--surface);font-size:22px;font-weight:800}
 .setup .btn{flex:1;min-width:180px}
 .expected-line{margin:0;color:var(--muted);font-size:15px}
+.linkish.inline{padding:0 4px;margin:0;font-size:15px;color:var(--blue);font-weight:600}
 </style>
 </head>
 <body>
@@ -237,7 +238,7 @@ button{cursor:pointer}
         <p class="hint" id="setupError" hidden style="color:var(--marker);margin:0"></p>
         <p class="hint" style="margin:0">Faça isso antes de mostrar o QR code: as cartelas só são liberadas depois. O vencedor do 1º lugar é sorteado em segredo entre esse número de pessoas, então informe o número mais próximo possível do real.</p>
       </div>
-      <p class="expected-line" id="expectedLine" hidden></p>
+      <p class="expected-line" id="expectedLine" hidden><span id="expectedText"></span> <button class="linkish inline" id="changeExpected">Alterar</button></p>
       <div class="postit empty" id="postit" aria-live="polite"><q id="current">Clique em sortear para começar</q></div>
       <div class="stage-actions">
         <button class="btn note" id="drawBtn">Sortear frase</button>
@@ -488,7 +489,7 @@ $("passInput").addEventListener("keydown", e => { if(e.key === "Enter") $("login
 $("logoutBtn").onclick = () => { modToken = null; store.del("token"); show("home"); };
 
 // ---------- Moderador ----------
-let mod = null, order = [], orderGame = null, busy = false, poll = null, refreshing = false;
+let mod = null, order = [], orderGame = null, busy = false, poll = null, refreshing = false, editingExpected = false;
 
 function applyMod(st){
   mod = st;
@@ -527,10 +528,13 @@ function renderMod(){
     else { post.classList.remove("empty"); $("current").textContent = PHRASES[drawn[drawn.length - 1]]; }
   }
   const done = mod.count >= PHRASES.length;
-  const needSetup = !mod.expected;
+  const canChange = mod.total === 0 && mod.count === 0;
+  if(!canChange) editingExpected = false;
+  const needSetup = !mod.expected || editingExpected;
   $("setup").hidden = !needSetup;
   $("expectedLine").hidden = needSetup;
-  if(!needSetup) $("expectedLine").textContent = "Jogo aberto para " + mod.expected + " pessoas.";
+  if(mod.expected) $("expectedText").textContent = "Jogo aberto para " + mod.expected + " pessoas.";
+  $("changeExpected").hidden = !canChange;
   $("drawBtn").disabled = busy || done || needSetup;
   $("drawBtn").textContent = needSetup ? "Abra o jogo para sortear" : done ? "Todas as frases saíram" : "Sortear frase";
   $("undoBtn").disabled = busy || mod.count === 0;
@@ -592,10 +596,11 @@ $("setupBtn").onclick = async () => {
   if(!Number.isInteger(n) || n < 2 || n > 300){ notice(err, "Informe um número de pessoas entre 2 e 300."); $("expectedInput").focus(); return; }
   notice(err, "");
   busy = true;
-  try{ applyMod(await api("/api/mod/setup", { expected: n }, true)); $("expectedInput").value = ""; }
+  try{ editingExpected = false; applyMod(await api("/api/mod/setup", { expected: n }, true)); $("expectedInput").value = ""; }
   catch(e){ if(e.status === 401) handleModError(e); else notice(err, e.message); }
   finally{ busy = false; renderMod(); }
 };
+$("changeExpected").onclick = () => { editingExpected = true; $("expectedInput").value = mod.expected || ""; renderMod(); $("expectedInput").focus(); };
 $("expectedInput").addEventListener("keydown", e => { if(e.key === "Enter") $("setupBtn").click(); });
 document.addEventListener("keydown", e => {
   if(e.code === "Space" && $("mod").classList.contains("on") && document.activeElement.tagName !== "INPUT"){ e.preventDefault(); draw(); }

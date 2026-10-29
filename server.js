@@ -159,7 +159,7 @@ const routes = {
   "POST /api/mod/setup": body => {
     const n = Number(body.expected);
     if (!validExpected(n)) return [400, { error: "Informe um número de pessoas entre 2 e 300." }];
-    if (state.joins > 0 || state.players.size > 0) return [409, { error: "Já tem gente no jogo. Para mudar o número, comece um novo jogo." }];
+    if (state.joins > 0 || state.players.size > 0) return [409, { error: "Já tem gente no jogo. Para mudar o número, toque duas vezes em \"Novo jogo\", no fim da página." }];
     state.plan = newPlan(n); state.fresh = false;
     return [200, modState()];
   },
