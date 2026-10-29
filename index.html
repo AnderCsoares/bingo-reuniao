@@ -135,6 +135,12 @@ button{cursor:pointer}
 .people li.off{color:var(--muted);font-weight:400}
 .people li.off i{background:var(--line)}
 [hidden]{display:none!important}
+.setup{border:2px dashed var(--blue);border-radius:16px;padding:18px;display:grid;gap:10px}
+.setup label{font-weight:800;font-size:clamp(20px,2.2vw,26px)}
+.setup .row{display:flex;gap:10px;flex-wrap:wrap}
+.setup input{width:140px;padding:14px 16px;border:2px solid var(--line);border-radius:12px;background:var(--surface);font-size:22px;font-weight:800}
+.setup .btn{flex:1;min-width:180px}
+.expected-line{margin:0;color:var(--muted);font-size:15px}
 </style>
 </head>
 <body>
@@ -222,6 +228,16 @@ button{cursor:pointer}
         <span>Frase sorteada</span>
         <span><span class="count" id="drawCount">0</span> de 50</span>
       </div>
+      <div class="setup" id="setup" hidden>
+        <label for="expectedInput">Quantas pessoas vão jogar?</label>
+        <div class="row">
+          <input id="expectedInput" type="number" inputmode="numeric" min="2" max="300" placeholder="Ex.: 28">
+          <button class="btn note" id="setupBtn">Abrir o jogo</button>
+        </div>
+        <p class="hint" id="setupError" hidden style="color:var(--marker);margin:0"></p>
+        <p class="hint" style="margin:0">Faça isso antes de mostrar o QR code: as cartelas só são liberadas depois. O vencedor do 1º lugar é sorteado em segredo entre esse número de pessoas, então informe o número mais próximo possível do real.</p>
+      </div>
+      <p class="expected-line" id="expectedLine" hidden></p>
       <div class="postit empty" id="postit" aria-live="polite"><q id="current">Clique em sortear para começar</q></div>
       <div class="stage-actions">
         <button class="btn note" id="drawBtn">Sortear frase</button>
@@ -476,7 +492,8 @@ let mod = null, order = [], orderGame = null, busy = false, poll = null, refresh
 function applyMod(st){
   mod = st;
   if(orderGame !== mod.game){ order = drawOrder(mod.game); orderGame = mod.game; }
-  store.set("modLocal", { game: mod.game, count: mod.count });
+  const prev = store.get("modLocal") || {};
+  store.set("modLocal", { game: mod.game, count: mod.count, expected: mod.expected || (prev.game === mod.game ? prev.expected : null) });
   notice($("modNotice"), "");
   renderMod();
 }
@@ -489,7 +506,8 @@ async function loadMod(tryRestore){
     let st = await api("/api/mod/state", undefined, true);
     const local = store.get("modLocal");
     // Se o servidor reiniciou e perdeu o sorteio, devolve o que este navegador lembra.
-    if(tryRestore && local && st.count === 0 && local.count > 0){
+    // Também recupera o número de pessoas informado, se o servidor o perdeu.
+    if(local && ((tryRestore && st.count === 0 && local.count > 0) || (!st.expected && local.expected && (local.game === st.game || (st.total === 0 && st.count === 0))))){
       st = await api("/api/mod/restore", local, true);
     }
     applyMod(st);
@@ -508,8 +526,12 @@ function renderMod(){
     else { post.classList.remove("empty"); $("current").textContent = PHRASES[drawn[drawn.length - 1]]; }
   }
   const done = mod.count >= PHRASES.length;
-  $("drawBtn").disabled = busy || done;
-  $("drawBtn").textContent = done ? "Todas as frases saíram" : "Sortear frase";
+  const needSetup = !mod.expected;
+  $("setup").hidden = !needSetup;
+  $("expectedLine").hidden = needSetup;
+  if(!needSetup) $("expectedLine").textContent = "Jogo aberto para " + mod.expected + " pessoas.";
+  $("drawBtn").disabled = busy || done || needSetup;
+  $("drawBtn").textContent = needSetup ? "Abra o jogo para sortear" : done ? "Todas as frases saíram" : "Sortear frase";
   $("undoBtn").disabled = busy || mod.count === 0;
 
   const h = $("history"); h.innerHTML = "";
@@ -522,7 +544,7 @@ function renderMod(){
   $("historyEmpty").hidden = drawn.length > 0;
 
   $("totalBig").textContent = mod.total;
-  $("totalLabel").textContent = mod.total === 1 ? "participante" : "participantes";
+  $("totalLabel").textContent = (mod.total === 1 ? "participante" : "participantes") + (mod.expected ? " de " + mod.expected + " previstos" : "");
   $("onlineLabel").textContent = mod.online + " online de " + mod.total;
   const ul = $("people"); ul.innerHTML = "";
   mod.players.forEach(p => {
@@ -563,6 +585,17 @@ async function draw(){
   }
 }
 $("drawBtn").onclick = draw;
+$("setupBtn").onclick = async () => {
+  const n = Number($("expectedInput").value);
+  const err = $("setupError");
+  if(!Number.isInteger(n) || n < 2 || n > 300){ notice(err, "Informe um número de pessoas entre 2 e 300."); $("expectedInput").focus(); return; }
+  notice(err, "");
+  busy = true;
+  try{ applyMod(await api("/api/mod/setup", { expected: n }, true)); $("expectedInput").value = ""; }
+  catch(e){ if(e.status === 401) handleModError(e); else notice(err, e.message); }
+  finally{ busy = false; renderMod(); }
+};
+$("expectedInput").addEventListener("keydown", e => { if(e.key === "Enter") $("setupBtn").click(); });
 document.addEventListener("keydown", e => {
   if(e.code === "Space" && $("mod").classList.contains("on") && document.activeElement.tagName !== "INPUT"){ e.preventDefault(); draw(); }
 });
