@@ -136,8 +136,9 @@ const routes = {
   },
 
   "POST /api/ping": body => {
-    // Se o servidor reiniciou, adota o jogo que os celulares já estavam jogando.
-    if (state.fresh && validGame(body.game) && body.game !== state.game) { state.game = body.game; state.fresh = false; }
+    // Enquanto o moderador não abriu o jogo, ninguém entra na lista. Depois de um reinício do
+    // servidor, os celulares esperam o moderador restaurar o jogo e então voltam sozinhos.
+    if (!state.plan) return [200, (state.fresh || body.game === state.game) ? { pending: true } : { ended: true }];
     if (body.game !== state.game) return [200, { ended: true }];
     if (!validCard(state.game, body.code)) return [400, { error: "Cartela inválida." }];
     if (!state.players.has(body.code)) state.joins = Math.max(state.joins, state.players.size + 1);

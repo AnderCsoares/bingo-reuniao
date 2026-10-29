@@ -306,7 +306,7 @@ const PHRASES = [
 ];
 const SIZE = 16;
 const ALPH = "ACDEFHJKMNPRTWXY34679"; // sem caracteres que se confundem
-const KEY = "bingo-reuniao-v4:";
+const KEY = "bingo-reuniao-v5:"; // versão nova ignora cartelas e dados de testes antigos
 
 const store = {
   get(k){ try{ const v = localStorage.getItem(KEY + k); return v ? JSON.parse(v) : null; }catch(e){ return null; } },
@@ -464,6 +464,7 @@ async function ping(){
     const r = await api("/api/ping", { game: me.game, code: me.code, name: me.name });
     notice($("playerNotice"), "");
     if(r.ended) return showEnded();
+    if(r.pending){ notice($("playerNotice"), "Aguardando o moderador abrir o jogo. Sua cartela continua salva."); return; }
     started = !!r.started; updateStatus();
   }catch(e){
     if(e.status === 0) notice($("playerNotice"), "Sem conexão no momento. Sua cartela continua salva neste celular.");
